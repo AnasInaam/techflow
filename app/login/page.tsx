@@ -10,16 +10,23 @@ export default function LoginPage() {
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    // Check for success message from registration
-    const message = searchParams.get('message');
-    if (message) {
-      setSuccessMessage(message);
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    // Only run on client side after component is mounted
+    if (isMounted && searchParams) {
+      const message = searchParams.get('message');
+      if (message) {
+        setSuccessMessage(message);
+      }
     }
-  }, [searchParams]);
+  }, [searchParams, isMounted]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -36,15 +43,17 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (res.ok) {
-        // Store user data in localStorage
-        const userData = {
-          id: data.user.id,
-          email: data.user.email,
-          name: `${data.user.firstName} ${data.user.lastName}`,
-          firstName: data.user.firstName,
-          lastName: data.user.lastName
-        };
-        localStorage.setItem('user', JSON.stringify(userData));
+        // Store user data in localStorage (only on client side)
+        if (typeof window !== 'undefined') {
+          const userData = {
+            id: data.user.id,
+            email: data.user.email,
+            name: `${data.user.firstName} ${data.user.lastName}`,
+            firstName: data.user.firstName,
+            lastName: data.user.lastName
+          };
+          localStorage.setItem('user', JSON.stringify(userData));
+        }
         
         // If login is successful, redirect to dashboard
         router.push('/dashboard');

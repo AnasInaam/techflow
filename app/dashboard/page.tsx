@@ -7,12 +7,20 @@ import { useRouter } from 'next/navigation';
 export default function DashboardPage() {
   const [user, setUser] = useState({ name: 'Loading...', email: '' });
   const [activeTab, setActiveTab] = useState('overview');
+  const [isMounted, setIsMounted] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    // Get user data from localStorage or session
-    const userData = localStorage.getItem('user');
-    if (userData) {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isMounted) return;
+
+    // Get user data from localStorage or session (only on client side)
+    if (typeof window !== 'undefined') {
+      const userData = localStorage.getItem('user');
+      if (userData) {
       const parsedUser = JSON.parse(userData);
       // Create display name with fallbacks
       let displayName = 'User';
@@ -30,15 +38,18 @@ export default function DashboardPage() {
         name: displayName,
         email: parsedUser.email || ''
       });
-    } else {
-      // If no user data, redirect to login
-      router.push('/login');
+      } else {
+        // If no user data, redirect to login
+        router.push('/login');
+      }
     }
-  }, [router]);
+  }, [router, isMounted]);
 
   const handleLogout = () => {
-    // Clear user data and redirect to home
-    localStorage.removeItem('user');
+    // Clear user data and redirect to home (only on client side)
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('user');
+    }
     router.push('/');
   };
 
