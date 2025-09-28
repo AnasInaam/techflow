@@ -1,5 +1,10 @@
 import { MongoClient } from 'mongodb';
 
+// Declare global type for development caching
+declare global {
+  var _mongoClientPromise: Promise<MongoClient> | undefined;
+}
+
 const uri = process.env.MONGODB_URI as string;
 const options = {};
 
@@ -11,14 +16,14 @@ if (!process.env.MONGODB_URI) {
 }
 
 if (process.env.NODE_ENV === 'development') {
-  // In development mode, reuse the same client
+  // In development mode, reuse the same client to prevent connection exhaustion
   if (!global._mongoClientPromise) {
     client = new MongoClient(uri, options);
     global._mongoClientPromise = client.connect();
   }
   clientPromise = global._mongoClientPromise;
 } else {
-  // In production mode, create a new client
+  // In production mode, create a new client for each serverless function
   client = new MongoClient(uri, options);
   clientPromise = client.connect();
 }
